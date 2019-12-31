@@ -1,6 +1,7 @@
+// index.js
 const { ApolloServer } = require("apollo-server-lambda");
 
-const schema = require("./schema");
+const schema = require("./graphql/schema");
 
 const server = new ApolloServer(schema);
 

@@ -11,9 +11,9 @@ if (isLambda) {
 } else {
   require("dotenv").config();
   AWS.config.update({
-    accessKeyId: process.env.DROPP_AWS_ACCESS_ID,
-    secretAccessKey: process.env.DROPP_AWS_SECRET_KEY,
-    region: process.env.DROPP_AWS_REGION
+    accessKeyId: process.env.AWS_ACCESS_ID,
+    secretAccessKey: process.env.AWS_SECRET_KEY,
+    region: process.env.AWS_REGION
   });
 }
 
@@ -25,7 +25,7 @@ const { transformArticle } = require("../transformers/article");
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 const defaultParams = {
-  TableName: "Articles",
+  TableName: "Addictions^",
 
   AttributesToGet: [
     "ID",
@@ -71,7 +71,7 @@ const queryByParams = params =>
     });
   });
 
-const getArticleById = async id => {
+const getAddictionById = async id => {
   const params = {
     ...defaultParams,
     Key: {
@@ -98,6 +98,6 @@ const getArticleBySlug = async slug => {
 };
 
 module.exports = {
-  getArticleById,
+  getAddictionById,
   getArticleBySlug
 };
