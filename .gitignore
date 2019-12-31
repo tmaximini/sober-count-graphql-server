@@ -2,3 +2,4 @@ node_modules/
 .serverless
 yarn.lock
 .env
+.deploy

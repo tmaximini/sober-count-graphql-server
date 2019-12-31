@@ -27,9 +27,9 @@ const { transformArticle } = require("../transformers/article");
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 const defaultParams = {
-  TableName: "Users",
+  TableName: "sober-count-users",
 
-  AttributesToGet: ["id", "username", "email", "addictions"]
+  AttributesToGet: ["username", "email", "addictions"]
 };
 
 const getByParams = params =>
@@ -81,7 +81,24 @@ const getUserByUsername = async username => {
   return User.parse(response);
 };
 
+const createDbUser = async ({ username, email }) => {
+  console.log({ username });
+  const params = User.put({ username, email });
+  const response = await docClient.put(params).promise();
+
+  console.info({ response });
+
+  return User.parse(response);
+};
+
+const getUsers = async () => {
+  const response = await docClient.scan({ ...defaultParams }).promise();
+  return User.parse(response);
+};
+
 module.exports = {
   getAddictionById,
+  getUsers,
+  createDbUser,
   getUserByUsername
 };
