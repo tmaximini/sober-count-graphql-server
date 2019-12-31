@@ -2,11 +2,13 @@ require("console-pretty-print");
 
 const AWS = require("aws-sdk");
 
+const { User } = require("../db");
+
 const isLambda = !!(process.env.LAMBDA_TASK_ROOT || false);
 
 if (isLambda) {
   AWS.config.update({
-    region: process.env.DROPP_AWS_REGION
+    region: process.env.AWS_REGION
   });
 } else {
   require("dotenv").config();
@@ -25,18 +27,9 @@ const { transformArticle } = require("../transformers/article");
 const docClient = new AWS.DynamoDB.DocumentClient();
 
 const defaultParams = {
-  TableName: "Addictions^",
+  TableName: "Users",
 
-  AttributesToGet: [
-    "ID",
-    "Name",
-    "Producer",
-    "Translations",
-    "Price",
-    "Price_rrp",
-    "Images",
-    "Slug"
-  ]
+  AttributesToGet: ["id", "username", "email", "addictions"]
 };
 
 const getByParams = params =>
@@ -75,29 +68,20 @@ const getAddictionById = async id => {
   const params = {
     ...defaultParams,
     Key: {
-      ID: id
+      id
     }
   };
 
   return getByParams(params);
 };
 
-// Slug is a GSI (global secondary index) on dynamoDB, so we can not just use ".get()"
-// instead we have to use this ugly Condition Syntax
-const getArticleBySlug = async slug => {
-  const params = {
-    TableName: "Articles",
-    IndexName: "Slug-index",
-    KeyConditionExpression: "Slug = :slugValue",
-    ExpressionAttributeValues: {
-      ":slugValue": slug
-    }
-  };
-
-  return queryByParams(params);
+const getUserByUsername = async username => {
+  const params = User.get({ username });
+  const response = await docClient.get(params).promise();
+  return User.parse(response);
 };
 
 module.exports = {
   getAddictionById,
-  getArticleBySlug
+  getUserByUsername
 };

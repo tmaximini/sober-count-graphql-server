@@ -13,10 +13,10 @@
     "aws-sdk": "^2.584.0",
     "console-pretty-print": "^1.0.4",
     "dotenv": "^8.2.0",
+    "dynamodb-toolbox": "^0.1.0",
     "graphql": "^14.5.8",
-    "isomorphic-fetch": "^2.2.1",
-    "pg": "^7.17.0",
-    "sequelize": "^5.21.3"
+    "graphql-date": "^1.0.3",
+    "isomorphic-fetch": "^2.2.1"
   },
   "devDependencies": {
     "nodemon": "^2.0.1"

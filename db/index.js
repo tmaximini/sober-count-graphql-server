@@ -1,27 +1,71 @@
-require("dotenv").config();
-const Sequelize = require("sequelize");
+// Require AWS SDK and instantiate DocumentClient
+const DynamoDB = require("aws-sdk/clients/dynamodb");
+const DocumentClient = new DynamoDB.DocumentClient({
+  region: process.env.AWS_REGION
+});
+const { Model } = require("dynamodb-toolbox");
 
-const sequelize = new Sequelize(
-  process.env.DATABASE,
-  process.env.DATABASE_USER,
-  process.env.DATABASE_PASSWORD,
-  {
-    dialect: "postgres"
-  }
-);
+const User = new Model("User", {
+  // Specify table name
+  table: "sober-count-users",
 
-const models = {
-  User: sequelize.import("./models/user"),
-  Addiction: sequelize.import("./models/addiction"),
-  UserAddiction: sequelize.import("./models/userAddiction")
-};
-Object.keys(models).forEach(key => {
-  if ("associate" in models[key]) {
-    models[key].associate(models);
+  // Define partition and sort keys
+  partitionKey: "username",
+
+  // Define schema
+  schema: {
+    pk: { type: "string", alias: "id" },
+    sk: { type: "string", hidden: true },
+    username: { type: "string" },
+    email: { type: "string" },
+    addictions: { type: "list" }
   }
 });
 
+const seed = () => {
+  const items = [
+    {
+      username: "tmaximini",
+      email: "tmaximini@gmail.com",
+      addictions: [
+        {
+          name: "alcohol",
+          since: "1577811214299",
+          status: "running"
+        },
+        {
+          name: "porn",
+          since: "1577811214299",
+          status: "running"
+        },
+        {
+          name: "nicotine",
+          since: "1577811214299",
+          status: "running"
+        },
+        {
+          name: "drugs",
+          since: "1577811214299",
+          status: "running"
+        },
+        {
+          name: "gaming",
+          since: "1577811214299",
+          status: "running"
+        }
+      ]
+    }
+  ];
+  items.forEach(async item => {
+    // Use the 'put' method of MyModel to generate parameters
+    let params = User.put(item);
+    // Pass the parameters to the DocumentClient's `put` method
+    let result = await DocumentClient.put(params).promise();
+    console.info({ result });
+  });
+};
+
 module.exports = {
-  sequelize,
-  models
+  User,
+  seed
 };

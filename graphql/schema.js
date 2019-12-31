@@ -1,29 +1,26 @@
 const { gql } = require("apollo-server-lambda");
 
-const {
-  getAddictionById,
-  getAddictionByName
-} = require("../resolvers/addiction");
+const { getUserByUsername } = require("../resolvers/addiction");
 
 const typeDefs = gql`
   type Addiction {
     id: ID!
-    name: String
-    descriptionLong: String
-    descriptionShort: String
-    users: [User!]
+    name: String!
+    since: String!
+    status: String
   }
 
   type Query {
-    addiction(id: ID!): Addiction
-    addictionByName(name: String!): Addiction
+    user(name: String!): User
   }
 
   type User {
     id: ID!
     username: String!
+    email: String
     passwordHash: String
     createdAt: Int!
+    addictions: [Addiction]
   }
 
   type Challenge {
@@ -35,11 +32,8 @@ const typeDefs = gql`
 
 const resolvers = {
   Query: {
-    addiction(obj, args, context, info) {
-      return getAddictionById(args.id);
-    },
-    addictionByName(obj, args, context, info) {
-      return getAddictionByName(args.name);
+    user(obj, args, context, info) {
+      return getUserByUsername(args.name);
     }
   }
 };
