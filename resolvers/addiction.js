@@ -81,12 +81,21 @@ const getUserByUsername = async username => {
   return User.parse(response);
 };
 
-const createDbUser = async ({ username, email }) => {
-  console.log({ username });
-  const params = User.put({ username, email });
+const createDbUser = async props => {
+  const params = User.put({ ...props, claps: 0 });
   const response = await docClient.put(params).promise();
 
-  console.info({ response });
+  return User.parse(response);
+};
+
+const addClap = async ({ username }) => {
+  const dbUser = await getUserByUsername(username);
+
+  const params = User.put({
+    ...dbUser,
+    claps: typeof dbUser.claps == "number" ? dbUser.claps + 1 : 1
+  });
+  const response = await docClient.put(params).promise();
 
   return User.parse(response);
 };
@@ -100,5 +109,6 @@ module.exports = {
   getAddictionById,
   getUsers,
   createDbUser,
-  getUserByUsername
+  getUserByUsername,
+  addClap
 };

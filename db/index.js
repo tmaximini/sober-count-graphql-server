@@ -18,7 +18,8 @@ const User = new Model("User", {
     sk: { type: "string", hidden: true },
     username: { type: "string" },
     email: { type: "string" },
-    addictions: { type: "list" }
+    addictions: { type: "list" },
+    claps: { type: "number" }
   }
 });
 

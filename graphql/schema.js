@@ -3,7 +3,8 @@ const { gql } = require("apollo-server-lambda");
 const {
   getUsers,
   getUserByUsername,
-  createDbUser
+  createDbUser,
+  addClap
 } = require("../resolvers/addiction");
 
 const typeDefs = gql`
@@ -21,6 +22,7 @@ const typeDefs = gql`
 
   type Mutation {
     createUser(username: String!, email: String!): User!
+    addClap(username: String!): User!
   }
 
   type CreateUserInput {
@@ -32,9 +34,13 @@ const typeDefs = gql`
   type User {
     id: ID!
     username: String!
-    email: String
+    email: String!
     # passwordHash: String
     createdAt: Int!
+    claps: Int!
+    tagline: String
+    whyStatement: String
+    avatarUrl: String
     addictions: [Addiction]
   }
 `;
@@ -51,6 +57,9 @@ const resolvers = {
   Mutation: {
     createUser(parent, args) {
       return createDbUser({ ...args });
+    },
+    addClap(parent, args) {
+      return addClap({ username: args.username });
     }
   }
 };
