@@ -2,7 +2,7 @@ const { gql } = require("apollo-server-lambda");
 
 const {
   getUsers,
-  getUserByUsername,
+  getUserBySlug,
   createDbUser,
   addClap
 } = require("../resolvers/addiction");
@@ -21,7 +21,13 @@ const typeDefs = gql`
   }
 
   type Mutation {
-    createUser(username: String!, email: String!): User!
+    createUser(
+      username: String!
+      email: String!
+      tagline: String
+      since: String!
+    ): User!
+
     addClap(username: String!): User!
   }
 
@@ -32,9 +38,10 @@ const typeDefs = gql`
   }
 
   type User {
-    id: ID!
+    slug: String!
     username: String!
     email: String!
+    since: String!
     # passwordHash: String
     createdAt: Int!
     claps: Int!
@@ -48,7 +55,7 @@ const typeDefs = gql`
 const resolvers = {
   Query: {
     user(obj, args, context, info) {
-      return getUserByUsername(args.name);
+      return getUserBySlug(args.name);
     },
     users(obj, args, context, info) {
       return getUsers();

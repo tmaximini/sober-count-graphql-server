@@ -1,6 +1,8 @@
 require("console-pretty-print");
 
 const AWS = require("aws-sdk");
+const slugify = require("slugify");
+// const uuidv4 = require("uuid/v4");
 
 const { User } = require("../db");
 
@@ -29,7 +31,7 @@ const docClient = new AWS.DynamoDB.DocumentClient();
 const defaultParams = {
   TableName: "sober-count-users",
 
-  AttributesToGet: ["username", "email", "addictions"]
+  AttributesToGet: ["username", "slug", "email", "since", "tagline"]
 };
 
 const getByParams = params =>
@@ -75,24 +77,31 @@ const getAddictionById = async id => {
   return getByParams(params);
 };
 
-const getUserByUsername = async username => {
-  const params = User.get({ username });
+const getUserBySlug = async username => {
+  const params = User.get({ slug: slugify(username), sk: "User" });
   const response = await docClient.get(params).promise();
   return User.parse(response);
 };
 
 const createDbUser = async props => {
-  const params = User.put({ ...props, claps: 0 });
+  const params = User.put({
+    ...props,
+    claps: 0,
+    slug: slugify(props.username),
+    type: "User",
+    createdAt: new Date()
+  });
   const response = await docClient.put(params).promise();
 
   return User.parse(response);
 };
 
 const addClap = async ({ username }) => {
-  const dbUser = await getUserByUsername(username);
+  const dbUser = await getUserBySlug(username);
 
   const params = User.put({
     ...dbUser,
+    type: "User",
     claps: typeof dbUser.claps == "number" ? dbUser.claps + 1 : 1
   });
   const response = await docClient.put(params).promise();
@@ -109,6 +118,6 @@ module.exports = {
   getAddictionById,
   getUsers,
   createDbUser,
-  getUserByUsername,
+  getUserBySlug,
   addClap
 };
