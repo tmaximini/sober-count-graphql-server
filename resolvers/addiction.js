@@ -96,13 +96,15 @@ const createDbUser = async props => {
   return User.parse(response);
 };
 
-const addClap = async ({ username }) => {
+const addClaps = async ({ username, claps }) => {
   const dbUser = await getUserBySlug(username);
+
+  console.info({ username, claps });
 
   const params = User.put({
     ...dbUser,
     type: "User",
-    claps: typeof dbUser.claps == "number" ? dbUser.claps + 1 : 1
+    claps: dbUser.claps + claps
   });
   const response = await docClient.put(params).promise();
 
@@ -119,5 +121,5 @@ module.exports = {
   getUsers,
   createDbUser,
   getUserBySlug,
-  addClap
+  addClaps
 };

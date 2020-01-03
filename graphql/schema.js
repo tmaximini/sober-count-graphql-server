@@ -4,7 +4,7 @@ const {
   getUsers,
   getUserBySlug,
   createDbUser,
-  addClap
+  addClaps
 } = require("../resolvers/addiction");
 
 const typeDefs = gql`
@@ -28,7 +28,7 @@ const typeDefs = gql`
       since: String!
     ): User!
 
-    addClap(username: String!): User!
+    addClaps(username: String!, claps: Int!): User!
   }
 
   type CreateUserInput {
@@ -65,8 +65,9 @@ const resolvers = {
     createUser(parent, args) {
       return createDbUser({ ...args });
     },
-    addClap(parent, args) {
-      return addClap({ username: args.username });
+    addClaps(parent, args) {
+      console.log("ADD CLAPS CALLED");
+      return addClaps({ ...args });
     }
   }
 };
