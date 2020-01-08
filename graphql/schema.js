@@ -34,7 +34,6 @@ const typeDefs = gql`
   type CreateUserInput {
     name: String!
     email: String!
-    addictions: [Addiction]
   }
 
   type User {

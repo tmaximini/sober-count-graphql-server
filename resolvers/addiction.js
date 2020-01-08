@@ -31,7 +31,7 @@ const docClient = new AWS.DynamoDB.DocumentClient();
 const defaultParams = {
   TableName: "sober-count-users",
 
-  AttributesToGet: ["username", "slug", "email", "since", "tagline"]
+  AttributesToGet: ["username", "slug", "email", "since", "tagline", "claps"]
 };
 
 const getByParams = params =>
