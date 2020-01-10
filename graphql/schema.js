@@ -9,11 +9,11 @@ const {
 } = require("../resolvers/addiction");
 
 const typeDefs = gql`
-  type Addiction {
-    id: ID!
-    name: String!
-    since: String!
-    status: String
+  type S3Object {
+    ETag: String
+    Location: String!
+    Key: String!
+    Bucket: String!
   }
 
   type Query {
@@ -27,15 +27,11 @@ const typeDefs = gql`
       email: String!
       tagline: String
       since: String!
+      avatarUrl: String
     ): User!
 
     addClaps(username: String!, claps: Int!): User!
-    uploadFile(file: Upload!): Boolean
-  }
-
-  type CreateUserInput {
-    name: String!
-    email: String!
+    uploadFile(file: Upload!): S3Object
   }
 
   type User {
@@ -49,7 +45,6 @@ const typeDefs = gql`
     tagline: String
     whyStatement: String
     avatarUrl: String
-    addictions: [Addiction]
   }
 `;
 
@@ -64,14 +59,17 @@ const resolvers = {
   },
   Mutation: {
     createUser(parent, args) {
+      console.log({ args });
       return createDbUser({ ...args });
     },
     addClaps(parent, args) {
-      console.log("ADD CLAPS CALLED");
       return addClaps({ ...args });
     },
-    uploadFile: (parent, { file }) => {
-      return handleFileUpload(file);
+    uploadFile: async (parent, { file }) => {
+      const response = await handleFileUpload(file);
+      console.info({ response });
+
+      return response;
     }
   }
 };

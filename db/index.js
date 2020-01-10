@@ -23,7 +23,8 @@ const User = new Model("User", {
     claps: { type: "number" },
     since: { type: "string" },
     tagline: { type: "string" },
-    createdAt: { type: "string" }
+    createdAt: { type: "string" },
+    avatarUrl: { type: "string" }
   }
 });
 

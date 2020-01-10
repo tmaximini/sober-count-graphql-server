@@ -3,7 +3,6 @@ require("console-pretty-print");
 const AWS = require("aws-sdk");
 const slugify = require("slugify");
 const uuidv4 = require("uuid/v4");
-const stream = require("stream");
 
 const { User } = require("../db");
 
@@ -21,7 +20,6 @@ if (isLambda) {
     region: process.env.AWS_REGION
   });
 }
-const { transformArticle } = require("../transformers/article");
 
 // INIT AWS
 // env variables set on Lambda function in AWS console
@@ -31,56 +29,25 @@ const s3 = new AWS.S3({ region: process.env.AWS_REGION });
 
 const s3DefaultParams = {
   ACL: "public-read",
-  Bucket: "sober-count-v1"
+  Bucket: "sober-count-v1",
+  Conditions: [
+    ["content-length-range", 0, 1024000], // 1 Mb
+    { acl: "public-read" }
+  ]
 };
 
 const defaultParams = {
   TableName: "sober-count-users",
 
-  AttributesToGet: ["username", "slug", "email", "since", "tagline", "claps"]
-};
-
-const getByParams = params =>
-  new Promise((resolve, reject) => {
-    docClient.get(params, (err, data) => {
-      if (err) {
-        console.log("error getting from dynamodb", err);
-        reject(err);
-      } else {
-        const result = transformArticle(data.Item);
-        console.log("yay got data from dynamodb", result);
-        resolve(result);
-      }
-    });
-  });
-
-const queryByParams = params =>
-  new Promise((resolve, reject) => {
-    docClient.query(params, (err, data) => {
-      if (err) {
-        console.log("error getting from dynamodb", err);
-        reject(err);
-      } else {
-        if (data.Items && data.Items.length > 0) {
-          const result = transformArticle(data.Items[0]);
-          console.log("yay got data from dynamodb", result);
-          resolve(result);
-        } else {
-          reject("no Item Found");
-        }
-      }
-    });
-  });
-
-const getAddictionById = async id => {
-  const params = {
-    ...defaultParams,
-    Key: {
-      id
-    }
-  };
-
-  return getByParams(params);
+  AttributesToGet: [
+    "username",
+    "slug",
+    "email",
+    "since",
+    "tagline",
+    "claps",
+    "avatarUrl"
+  ]
 };
 
 const getUserBySlug = async username => {
@@ -97,6 +64,7 @@ const createDbUser = async props => {
     type: "User",
     createdAt: new Date()
   });
+  console.info("creating user with params: ", params);
   const response = await docClient.put(params).promise();
 
   return User.parse(response);
@@ -104,8 +72,6 @@ const createDbUser = async props => {
 
 const addClaps = async ({ username, claps }) => {
   const dbUser = await getUserBySlug(username);
-
-  console.info({ username, claps });
 
   const params = User.put({
     ...dbUser,
@@ -123,13 +89,11 @@ const getUsers = async () => {
 };
 
 const handleFileUpload = async file => {
-  console.info({ file });
-
   const { createReadStream, filename } = await file;
 
   const key = uuidv4();
 
-  await new Promise((resolve, reject) => {
+  return new Promise((resolve, reject) => {
     s3.upload(
       {
         ...s3DefaultParams,
@@ -150,7 +114,6 @@ const handleFileUpload = async file => {
 };
 
 module.exports = {
-  getAddictionById,
   getUsers,
   createDbUser,
   getUserBySlug,
