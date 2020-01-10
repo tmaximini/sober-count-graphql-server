@@ -2,7 +2,8 @@ require("console-pretty-print");
 
 const AWS = require("aws-sdk");
 const slugify = require("slugify");
-// const uuidv4 = require("uuid/v4");
+const uuidv4 = require("uuid/v4");
+const stream = require("stream");
 
 const { User } = require("../db");
 
@@ -20,13 +21,18 @@ if (isLambda) {
     region: process.env.AWS_REGION
   });
 }
-
 const { transformArticle } = require("../transformers/article");
 
 // INIT AWS
 // env variables set on Lambda function in AWS console
 
 const docClient = new AWS.DynamoDB.DocumentClient();
+const s3 = new AWS.S3({ region: process.env.AWS_REGION });
+
+const s3DefaultParams = {
+  ACL: "public-read",
+  Bucket: "sober-count-v1"
+};
 
 const defaultParams = {
   TableName: "sober-count-users",
@@ -116,10 +122,38 @@ const getUsers = async () => {
   return User.parse(response);
 };
 
+const handleFileUpload = async file => {
+  console.info({ file });
+
+  const { createReadStream, filename } = await file;
+
+  const key = uuidv4();
+
+  await new Promise((resolve, reject) => {
+    s3.upload(
+      {
+        ...s3DefaultParams,
+        Body: createReadStream(),
+        Key: `${key}/${filename}`
+      },
+      (err, data) => {
+        if (err) {
+          console.log("error uploading...", err);
+          reject(err);
+        } else {
+          console.log("successfully uploaded file...", data);
+          resolve(data);
+        }
+      }
+    );
+  });
+};
+
 module.exports = {
   getAddictionById,
   getUsers,
   createDbUser,
   getUserBySlug,
-  addClaps
+  addClaps,
+  handleFileUpload
 };

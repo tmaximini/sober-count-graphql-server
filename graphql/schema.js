@@ -4,7 +4,8 @@ const {
   getUsers,
   getUserBySlug,
   createDbUser,
-  addClaps
+  addClaps,
+  handleFileUpload
 } = require("../resolvers/addiction");
 
 const typeDefs = gql`
@@ -29,6 +30,7 @@ const typeDefs = gql`
     ): User!
 
     addClaps(username: String!, claps: Int!): User!
+    uploadFile(file: Upload!): Boolean
   }
 
   type CreateUserInput {
@@ -67,6 +69,9 @@ const resolvers = {
     addClaps(parent, args) {
       console.log("ADD CLAPS CALLED");
       return addClaps({ ...args });
+    },
+    uploadFile: (parent, { file }) => {
+      return handleFileUpload(file);
     }
   }
 };
