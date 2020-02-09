@@ -6,7 +6,7 @@ const {
   createDbUser,
   addClaps,
   handleFileUpload
-} = require("../resolvers/addiction");
+} = require("../resolvers/user");
 
 const typeDefs = gql`
   type S3Object {
