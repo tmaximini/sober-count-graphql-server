@@ -22,8 +22,7 @@ if (isLambda) {
 }
 
 // INIT AWS
-// env variables set on Lambda function in AWS console
-
+// env variables set on Lambda function in AWS console1
 const docClient = new AWS.DynamoDB.DocumentClient();
 const s3 = new AWS.S3({ region: process.env.AWS_REGION });
 
