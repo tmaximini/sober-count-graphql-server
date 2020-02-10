@@ -3,6 +3,7 @@ require("console-pretty-print");
 const AWS = require("aws-sdk");
 const slugify = require("slugify");
 const uuidv4 = require("uuid/v4");
+const bcrypt = require("bcrypt");
 
 const { User } = require("../db");
 
@@ -49,18 +50,31 @@ const defaultParams = {
   ]
 };
 
-const getUserBySlug = async username => {
+const getUserByUsername = async username => {
   const params = User.get({ slug: slugify(username), sk: "User" });
   const response = await docClient.get(params).promise();
   return User.parse(response);
 };
 
+const getUserByEmail = async email => {
+  const params = User.get({ email, sk: "User" });
+  const response = await docClient.get(params).promise();
+  return User.parse(response);
+};
+
 const createDbUser = async props => {
+  console.log("createDbUser", props);
+  const passwordHash = await bcrypt.hash(props.password, 8); // hash the pass
+  console.log("passwordHash", passwordHash);
+  delete props.password; // don't save it in clear text
+
   const params = User.put({
     ...props,
-    claps: 0,
-    slug: slugify(props.username),
+    id: uuidv4(),
     type: "User",
+    slug: slugify(props.username),
+    passwordHash,
+    claps: 0,
     createdAt: new Date()
   });
   console.info("creating user with params: ", params);
@@ -70,7 +84,7 @@ const createDbUser = async props => {
 };
 
 const addClaps = async ({ username, claps }) => {
-  const dbUser = await getUserBySlug(username);
+  const dbUser = await getUserByUsername(username);
 
   const params = User.put({
     ...dbUser,
@@ -115,7 +129,8 @@ const handleFileUpload = async file => {
 module.exports = {
   getUsers,
   createDbUser,
-  getUserBySlug,
+  getUserByUsername,
+  getUserByEmail,
   addClaps,
   handleFileUpload
 };

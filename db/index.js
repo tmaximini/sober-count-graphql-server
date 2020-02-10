@@ -18,6 +18,8 @@ const User = new Model("User", {
     pk: { type: "string", alias: "slug" },
     sk: { type: "string", alias: "type", hidden: true },
     username: { type: "string" },
+    id: { type: "string" },
+    passwordHash: { type: "string" },
     email: { type: "string" },
     addictions: { type: "list" },
     claps: { type: "number" },

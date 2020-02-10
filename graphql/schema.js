@@ -2,7 +2,7 @@ const { gql } = require("apollo-server-lambda");
 
 const {
   getUsers,
-  getUserBySlug,
+  getUserByUsername,
   createDbUser,
   addClaps,
   handleFileUpload
@@ -25,6 +25,7 @@ const typeDefs = gql`
     createUser(
       username: String!
       email: String!
+      password: String!
       tagline: String
       since: String!
       avatarUrl: String
@@ -39,7 +40,7 @@ const typeDefs = gql`
     username: String!
     email: String!
     since: String!
-    # passwordHash: String
+    passwordHash: String!
     createdAt: Int!
     claps: Int!
     tagline: String
@@ -51,7 +52,7 @@ const typeDefs = gql`
 const resolvers = {
   Query: {
     user(obj, args, context, info) {
-      return getUserBySlug(args.name);
+      return getUserByUsername(args.name);
     },
     users(obj, args, context, info) {
       return getUsers();

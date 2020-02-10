@@ -1,14 +1,16 @@
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs-then");
+const bcrypt = require("bcrypt");
+
+const { getUserByUsername } = require("../resolvers/user");
 
 /*
  * Functions
  */
 
-module.exports.login = (event, context) => {
-  context.callbackWaitsForEmptyEventLoop = false;
-  return connectToDatabase()
-    .then(() => login(JSON.parse(event.body)))
+module.exports.login = async (event, context) => {
+  const body = JSON.parse(event.body);
+
+  return login(body.username)
     .then(session => ({
       statusCode: 200,
       body: JSON.stringify(session)
@@ -38,64 +40,13 @@ function signToken(id) {
   });
 }
 
-function checkIfInputIsValid(eventBody) {
-  if (!(eventBody.password && eventBody.password.length >= 7)) {
-    return Promise.reject(
-      new Error(
-        "Password error. Password needs to be longer than 8 characters."
-      )
-    );
-  }
-
-  if (
-    !(
-      eventBody.name &&
-      eventBody.name.length > 5 &&
-      typeof eventBody.name === "string"
-    )
-  )
-    return Promise.reject(
-      new Error("Username error. Username needs to longer than 5 characters")
-    );
-
-  if (!(eventBody.email && typeof eventBody.name === "string"))
-    return Promise.reject(
-      new Error("Email error. Email must have valid characters.")
-    );
-
-  return Promise.resolve();
-}
-
 // todo: replace with dynamodb
-function register(eventBody) {
-  return checkIfInputIsValid(eventBody) // validate input
-    .then(
-      () => User.findOne({ email: eventBody.email }) // check if user exists
-    )
-    .then(
-      user =>
-        user
-          ? Promise.reject(new Error("User with that email exists."))
-          : bcrypt.hash(eventBody.password, 8) // hash the pass
-    )
-    .then(
-      hash =>
-        User.create({
-          name: eventBody.name,
-          email: eventBody.email,
-          password: hash
-        }) // create the new user
-    )
-    .then(user => ({ auth: true, token: signToken(user._id) })); // sign the token and send it back
-}
-
-// todo: replace with dynamodb
-function login(eventBody) {
-  return User.findOne({ email: eventBody.email })
+function login(username) {
+  return getUserByUsername(username)
     .then(user =>
       !user
         ? Promise.reject(new Error("User with that email does not exits."))
-        : comparePassword(eventBody.password, user.password, user._id)
+        : comparePassword(eventBody.password, user.password, user.id)
     )
     .then(token => ({ auth: true, token: token }));
 }
@@ -115,3 +66,54 @@ function me(userId) {
     .then(user => (!user ? Promise.reject("No user found.") : user))
     .catch(err => Promise.reject(new Error(err)));
 }
+
+// function checkIfInputIsValid(eventBody) {
+//   if (!(eventBody.password && eventBody.password.length >= 7)) {
+//     return Promise.reject(
+//       new Error(
+//         "Password error. Password needs to be longer than 8 characters."
+//       )
+//     );
+//   }
+
+//   if (
+//     !(
+//       eventBody.name &&
+//       eventBody.name.length > 5 &&
+//       typeof eventBody.name === "string"
+//     )
+//   )
+//     return Promise.reject(
+//       new Error("Username error. Username needs to longer than 5 characters")
+//     );
+
+//   if (!(eventBody.email && typeof eventBody.name === "string"))
+//     return Promise.reject(
+//       new Error("Email error. Email must have valid characters.")
+//     );
+
+//   return Promise.resolve();
+// }
+
+// todo: replace with dynamodb
+// function register(eventBody) {
+//   return checkIfInputIsValid(eventBody) // validate input
+//     .then(
+//       () => User.findOne({ email: eventBody.email }) // check if user exists
+//     )
+//     .then(
+//       user =>
+//         user
+//           ? Promise.reject(new Error("User with that email exists."))
+//           : bcrypt.hash(eventBody.password, 8) // hash the pass
+//     )
+//     .then(
+//       hash =>
+//         User.create({
+//           name: eventBody.name,
+//           email: eventBody.email,
+//           password: hash
+//         }) // create the new user
+//     )
+//     .then(user => ({ auth: true, token: signToken(user._id) })); // sign the token and send it back
+// }
