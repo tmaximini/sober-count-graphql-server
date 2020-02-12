@@ -44,5 +44,7 @@ functions:
           path: me
           method: get
           cors: true
-          authorizer: verify-token # execute this before !
-
+          authorizer:
+            name: verify-token # execute this before !
+            identitySource: method.request.header.Authorization
+            resultTtlInSeconds: 3600
