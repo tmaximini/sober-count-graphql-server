@@ -32,10 +32,12 @@ module.exports.verifyToken = async (event, context, callback) => {
 
   if (!token || !methodArn) return null;
 
-  console.log("token, methodArn", token, methodArn);
+  console.log("token, methodArn", token, methodArn, process.env.JWT_SECRET);
 
   // verifies token
   jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+    console.info({ err, decoded });
+
     if (err) {
       return generateAuthResponse(decoded.id, "Deny", methodArn);
     } else {

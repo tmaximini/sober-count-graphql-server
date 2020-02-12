@@ -48,3 +48,10 @@ functions:
             name: verify-token # execute this before !
             identitySource: method.request.header.Authorization
             resultTtlInSeconds: 3600
+  login:
+    handler: functions/users.signIn
+    events:
+      - http:
+          path: login
+          method: post
+          cors: true

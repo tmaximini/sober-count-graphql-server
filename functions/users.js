@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 
 const { getUserByUsername } = require("../resolvers/user");
 
@@ -7,19 +7,23 @@ const { getUserByUsername } = require("../resolvers/user");
  * Functions
  */
 
-module.exports.login = async (event, context) => {
+module.exports.signIn = async (event, context) => {
   const body = JSON.parse(event.body);
 
-  return login(body.username)
+  return login(body)
     .then(session => ({
       statusCode: 200,
       body: JSON.stringify(session)
     }))
-    .catch(err => ({
-      statusCode: err.statusCode || 500,
-      headers: { "Content-Type": "text/plain" },
-      body: { stack: err.stack, message: err.message }
-    }));
+    .catch(err => {
+      console.log({ error });
+
+      return {
+        statusCode: err.statusCode || 500,
+        headers: { "Content-Type": "text/plain" },
+        body: { stack: err.stack, message: err.message }
+      };
+    });
 };
 
 module.exports.me = () => {
@@ -41,14 +45,17 @@ function signToken(id) {
 }
 
 // todo: replace with dynamodb
-function login(username) {
-  return getUserByUsername(username)
+function login(eventBody) {
+  console.log("looking for user", eventBody.username);
+
+  return getUserByUsername(eventBody.username)
     .then(user =>
       !user
         ? Promise.reject(new Error("User with that email does not exits."))
-        : comparePassword(eventBody.password, user.password, user.id)
+        : comparePassword(eventBody.password, user.passwordHash, user.id)
     )
-    .then(token => ({ auth: true, token: token }));
+    .then(token => ({ auth: true, token: token }))
+    .catch(err => console.info("Error login", err));
 }
 
 function comparePassword(eventPassword, userPassword, userId) {

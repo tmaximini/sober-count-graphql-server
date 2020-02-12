@@ -3,7 +3,7 @@ require("console-pretty-print");
 const AWS = require("aws-sdk");
 const slugify = require("slugify");
 const uuidv4 = require("uuid/v4");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 
 const { User } = require("../db");
 
