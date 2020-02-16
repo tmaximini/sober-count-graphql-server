@@ -23,25 +23,30 @@ function generatePolicyDocument(effect, methodArn) {
     ]
   };
 
+  console.info({ policyDocument });
+
   return policyDocument;
 }
 
-module.exports.verifyToken = async (event, context, callback) => {
-  const token = event.authorizationToken;
+module.exports.verifyToken = (event, context, callback) => {
+  const token = event.authorizationToken.replace("Bearer ", "");
   const methodArn = event.methodArn;
 
-  if (!token || !methodArn) return null;
+  console.log(event, context);
 
-  console.log("token, methodArn", token, methodArn, process.env.JWT_SECRET);
+  console.log({ methodArn });
+
+  if (!token || !methodArn) return callback(null, "Unauthorized");
+
+  const secret = Buffer.from(process.env.JWT_SECRET, "base64");
 
   // verifies token
-  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-    console.info({ err, decoded });
+  const decoded = jwt.verify(token, secret);
+  console.info({ decoded });
 
-    if (err) {
-      return generateAuthResponse(decoded.id, "Deny", methodArn);
-    } else {
-      return generateAuthResponse(decoded.id, "Allow", methodArn);
-    }
-  });
+  if (decoded && decoded.id) {
+    return callback(null, generateAuthResponse("me", "Allow", methodArn));
+  } else {
+    return callback(null, generateAuthResponse("me", "Deny", methodArn));
+  }
 };

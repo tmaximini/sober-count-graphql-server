@@ -38,41 +38,44 @@ module.exports.me = () => {
  * Helpers
  */
 
-function signToken(id) {
-  return jwt.sign({ id: id }, process.env.JWT_SECRET, {
+async function signToken(id) {
+  const secret = Buffer.from(process.env.JWT_SECRET, "base64");
+  return jwt.sign({ id: id }, secret, {
     expiresIn: 86400 // expires in 24 hours
   });
 }
 
 // todo: replace with dynamodb
-function login(eventBody) {
+async function login(eventBody) {
   console.log("looking for user", eventBody.username);
 
-  return getUserByUsername(eventBody.username)
-    .then(user =>
-      !user
-        ? Promise.reject(new Error("User with that email does not exits."))
-        : comparePassword(eventBody.password, user.passwordHash, user.id)
-    )
-    .then(token => ({ auth: true, token: token }))
-    .catch(err => console.info("Error login", err));
-}
+  try {
+    const user = await getUserByUsername(eventBody.username);
 
-function comparePassword(eventPassword, userPassword, userId) {
-  return bcrypt
-    .compare(eventPassword, userPassword)
-    .then(passwordIsValid =>
-      !passwordIsValid
-        ? Promise.reject(new Error("The credentials do not match."))
-        : signToken(userId)
+    const isValidPassword = await comparePassword(
+      eventBody.password,
+      user.passwordHash
     );
+
+    if (isValidPassword) {
+      const token = await signToken(user.id);
+      return Promise.resolve({ auth: true, token: token });
+    }
+  } catch (err) {
+    console.info("Error login", err);
+    return Promise.reject(new Error(err));
+  }
 }
 
-function me(userId) {
-  return User.findById(userId, { password: 0 })
-    .then(user => (!user ? Promise.reject("No user found.") : user))
-    .catch(err => Promise.reject(new Error(err)));
+function comparePassword(eventPassword, userPassword) {
+  return bcrypt.compare(eventPassword, userPassword);
 }
+
+// function me(userId) {
+//   return User.findById(userId, { password: 0 })
+//     .then(user => (!user ? Promise.reject("No user found.") : user))
+//     .catch(err => Promise.reject(new Error(err)));
+// }
 
 // function checkIfInputIsValid(eventBody) {
 //   if (!(eventBody.password && eventBody.password.length >= 7)) {

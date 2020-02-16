@@ -7,7 +7,7 @@ custom:
 service: apollo-lambda
 provider:
   name: aws
-  runtime: nodejs10.x
+  runtime: nodejs12.x
   region: eu-central-1
   environment:
     JWT_SECRET: ${self:custom.secrets.JWT_SECRET}
