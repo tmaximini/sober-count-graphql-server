@@ -41,6 +41,7 @@ const defaultParams = {
 
   AttributesToGet: [
     "username",
+    "pk",
     "slug",
     "email",
     "since",
@@ -50,16 +51,24 @@ const defaultParams = {
   ]
 };
 
-const getUserByUsername = async username => {
-  const params = User.get({ slug: slugify(username), sk: "User" });
+const getUserByParams = async params => {
   const response = await docClient.get(params).promise();
   return User.parse(response);
 };
 
+const getUserByUsername = async username => {
+  const params = User.get({ slug: slugify(username), sk: "User" });
+  return getUserByParams(params);
+};
+
+const getUserById = async id => {
+  const params = User.query({ id, sk: "User" });
+  return getUserByParams(params);
+};
+
 const getUserByEmail = async email => {
   const params = User.get({ email, sk: "User" });
-  const response = await docClient.get(params).promise();
-  return User.parse(response);
+  return getUserByParams(params);
 };
 
 const createDbUser = async props => {
@@ -131,6 +140,7 @@ module.exports = {
   createDbUser,
   getUserByUsername,
   getUserByEmail,
+  getUserById,
   addClaps,
   handleFileUpload
 };

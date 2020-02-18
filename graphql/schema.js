@@ -8,6 +8,8 @@ const {
   handleFileUpload
 } = require("../resolvers/user");
 
+const { login } = require("../functions/users");
+
 const typeDefs = gql`
   type S3Object {
     ETag: String
@@ -33,6 +35,7 @@ const typeDefs = gql`
 
     addClaps(username: String!, claps: Int!): User!
     uploadFile(file: Upload!): S3Object
+    loginUserByUsername(username: String!, password: String!): LoginResponse!
   }
 
   type User {
@@ -46,6 +49,16 @@ const typeDefs = gql`
     tagline: String
     whyStatement: String
     avatarUrl: String
+  }
+
+  type LoginResponse {
+    status: String
+    token: String
+  }
+
+  type Error {
+    statusCode: Int!
+    message: String!
   }
 `;
 
@@ -69,6 +82,11 @@ const resolvers = {
     uploadFile: async (parent, { file }) => {
       const response = await handleFileUpload(file);
       console.info({ response });
+
+      return response;
+    },
+    loginUserByUsername: async (parent, args, context) => {
+      const response = await login(args, context);
 
       return response;
     }

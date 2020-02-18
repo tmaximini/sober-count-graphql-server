@@ -16,11 +16,10 @@ const User = new Model("User", {
   // Define schema
   schema: {
     pk: { type: "string", alias: "slug" },
-    sk: { type: "string", alias: "type", hidden: true },
-    username: { type: "string" },
-    id: { type: "string" },
+    sk: { type: "string", hidden: true, alias: "type" },
     passwordHash: { type: "string" },
     email: { type: "string" },
+    username: { type: "string" },
     addictions: { type: "list" },
     claps: { type: "number" },
     since: { type: "string" },

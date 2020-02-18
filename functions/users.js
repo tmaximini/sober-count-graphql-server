@@ -1,13 +1,13 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
-const { getUserByUsername } = require("../resolvers/user");
+const { getUserByUsername, getUserByEmail } = require("../resolvers/user");
 
 /*
  * Functions
  */
 
-module.exports.signIn = async (event, context) => {
+const signIn = async (event, context) => {
   const body = JSON.parse(event.body);
 
   return login(body)
@@ -16,7 +16,7 @@ module.exports.signIn = async (event, context) => {
       body: JSON.stringify(session)
     }))
     .catch(err => {
-      console.log({ error });
+      console.log({ err });
 
       return {
         statusCode: err.statusCode || 500,
@@ -26,11 +26,17 @@ module.exports.signIn = async (event, context) => {
     });
 };
 
-module.exports.me = () => {
+const me = async event => {
+  const slug = await getUserSlugFromToken(event.headers.Authorization);
+
+  console.info({ slug });
+
+  const user = await getUserByUsername(slug);
+
   return {
     statusCode: 200,
-    headers: { "Content-Type": "text/json" },
-    body: { test: "protected" }
+    headers: {},
+    body: JSON.stringify(user)
   };
 };
 
@@ -38,28 +44,50 @@ module.exports.me = () => {
  * Helpers
  */
 
-async function signToken(id) {
+async function signToken(user) {
   const secret = Buffer.from(process.env.JWT_SECRET, "base64");
-  return jwt.sign({ id: id }, secret, {
+  return jwt.sign({ id: user.id, slug: user.slug }, secret, {
     expiresIn: 86400 // expires in 24 hours
   });
 }
 
+async function getUserSlugFromToken(token) {
+  const secret = Buffer.from(process.env.JWT_SECRET, "base64");
+
+  const decoded = jwt.verify(token.replace("Bearer ", ""), secret);
+
+  console.log("getUserSlugFromToken decoded", decoded);
+
+  return decoded.slug;
+}
+
 // todo: replace with dynamodb
-async function login(eventBody) {
-  console.log("looking for user", eventBody.username);
+async function login(args, context) {
+  console.log("looking for user", args.username, context);
 
   try {
-    const user = await getUserByUsername(eventBody.username);
+    const user = await getUserByUsername(args.username);
+
+    console.info({ user });
+
+    if (!user.username && !user.passwordHash) {
+      return {
+        status: "INVALIDCREDENTIALS"
+      };
+    }
 
     const isValidPassword = await comparePassword(
-      eventBody.password,
+      args.password,
       user.passwordHash
     );
 
     if (isValidPassword) {
-      const token = await signToken(user.id);
-      return Promise.resolve({ auth: true, token: token });
+      const token = await signToken(user);
+      return Promise.resolve({ auth: true, token: token, status: "SUCCESS" });
+    } else {
+      return {
+        status: "INVALIDCREDENTIALS"
+      };
     }
   } catch (err) {
     console.info("Error login", err);
@@ -71,59 +99,8 @@ function comparePassword(eventPassword, userPassword) {
   return bcrypt.compare(eventPassword, userPassword);
 }
 
-// function me(userId) {
-//   return User.findById(userId, { password: 0 })
-//     .then(user => (!user ? Promise.reject("No user found.") : user))
-//     .catch(err => Promise.reject(new Error(err)));
-// }
-
-// function checkIfInputIsValid(eventBody) {
-//   if (!(eventBody.password && eventBody.password.length >= 7)) {
-//     return Promise.reject(
-//       new Error(
-//         "Password error. Password needs to be longer than 8 characters."
-//       )
-//     );
-//   }
-
-//   if (
-//     !(
-//       eventBody.name &&
-//       eventBody.name.length > 5 &&
-//       typeof eventBody.name === "string"
-//     )
-//   )
-//     return Promise.reject(
-//       new Error("Username error. Username needs to longer than 5 characters")
-//     );
-
-//   if (!(eventBody.email && typeof eventBody.name === "string"))
-//     return Promise.reject(
-//       new Error("Email error. Email must have valid characters.")
-//     );
-
-//   return Promise.resolve();
-// }
-
-// todo: replace with dynamodb
-// function register(eventBody) {
-//   return checkIfInputIsValid(eventBody) // validate input
-//     .then(
-//       () => User.findOne({ email: eventBody.email }) // check if user exists
-//     )
-//     .then(
-//       user =>
-//         user
-//           ? Promise.reject(new Error("User with that email exists."))
-//           : bcrypt.hash(eventBody.password, 8) // hash the pass
-//     )
-//     .then(
-//       hash =>
-//         User.create({
-//           name: eventBody.name,
-//           email: eventBody.email,
-//           password: hash
-//         }) // create the new user
-//     )
-//     .then(user => ({ auth: true, token: signToken(user._id) })); // sign the token and send it back
-// }
+module.exports = {
+  login,
+  signIn,
+  me
+};
